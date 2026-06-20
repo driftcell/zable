@@ -8108,9 +8108,12 @@ dependencies = [
 name = "zable"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "gpui",
  "gpui-component",
+ "gpui-component-assets",
  "gpui_platform",
+ "rust-embed",
  "serde",
  "serde_json",
  "url",

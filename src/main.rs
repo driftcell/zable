@@ -1,21 +1,49 @@
 use gpui::*;
-use gpui_component::*;
 
 mod connection;
 
+use anyhow::anyhow;
 use connection::ConnectionView;
+use gpui_component::Root;
+use rust_embed::RustEmbed;
+use std::borrow::Cow;
 
+/// An asset source that loads assets from the `./assets` folder.
+#[derive(RustEmbed)]
+#[folder = "./assets"]
+#[include = "icons/**/*.svg"]
+pub struct Assets;
+
+impl AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
+        if path.is_empty() {
+            return Ok(None);
+        }
+
+        Self::get(path)
+            .map(|f| Some(f.data))
+            .ok_or_else(|| anyhow!("could not find asset at path \"{path}\""))
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<SharedString>> {
+        Ok(Self::iter()
+            .filter_map(|p| p.starts_with(path).then(|| p.into()))
+            .collect())
+    }
+}
 fn main() {
-    gpui_platform::application().run(move |cx| {
-        gpui_component::init(cx);
+    gpui_platform::application()
+        .with_assets(Assets)
+        .run(move |cx| {
+            gpui_component::init(cx);
 
-        cx.spawn(async move |cx| {
-            cx.open_window(WindowOptions::default(), |window, cx| {
-                let view = cx.new(|cx| ConnectionView::new(window, cx));
-                cx.new(|cx| Root::new(view, window, cx))
+            cx.spawn(async move |cx| {
+                cx.open_window(WindowOptions::default(), |window, cx| {
+                    let view = cx.new(|cx| ConnectionView::new(window, cx));
+                    cx.new(|cx| Root::new(view, window, cx))
+                })
+                .expect("Failed to open window");
             })
-            .expect("Failed to open window");
-        })
-        .detach();
-    });
+            .detach();
+        });
 }
