@@ -1,8 +1,9 @@
+use zable_components::field::Field;
+
 use std::collections::HashMap;
 
 use gpui::{
-    AppContext, Context, Entity, IntoElement, ParentElement, Render, SharedString, Styled, Window,
-    div, px,
+    AppContext, Context, Entity, ParentElement, Render, SharedString, Styled, Window, div, px,
 };
 use gpui_component::{
     ActiveTheme, Icon, IconName, IconNamed, StyledExt,
@@ -45,6 +46,7 @@ impl DatabaseType {
         }
     }
 
+    #[allow(dead_code)]
     fn as_str(&self) -> &str {
         match self {
             DatabaseType::Postgres => "PostgreSQL",
@@ -53,6 +55,7 @@ impl DatabaseType {
         }
     }
 
+    #[allow(dead_code)]
     /// A representative icon for the database type.
     fn icon(&self) -> IconName {
         IconName::HardDrive
@@ -173,60 +176,6 @@ impl ConnectionView {
             parse_error: None,
         }
     }
-
-    /// A single labeled input row, using the library's `Label` for the
-    /// caption and a muted hint underneath.
-    fn field(
-        label: &'static str,
-        hint: &'static str,
-        input: impl IntoElement,
-        theme: gpui_component::ThemeColor,
-    ) -> impl IntoElement {
-        v_flex()
-            .gap_1()
-            .child(
-                h_flex()
-                    .gap_1p5()
-                    .items_center()
-                    .justify_between()
-                    .child(
-                        Label::new(label)
-                            .text_sm()
-                            .font_medium()
-                            .text_color(theme.foreground),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child(hint),
-                    ),
-            )
-            .child(input)
-    }
-
-    /// A small pill showing a key/value pair parsed from the connection URL.
-    fn info_pill(
-        key: &'static str,
-        value: SharedString,
-        theme: gpui_component::ThemeColor,
-    ) -> impl IntoElement {
-        h_flex()
-            .items_center()
-            .gap_1()
-            .px_2()
-            .py_0p5()
-            .rounded_md()
-            .bg(theme.secondary)
-            .text_xs()
-            .child(div().text_color(theme.muted_foreground).child(key))
-            .child(
-                div()
-                    .text_color(theme.foreground)
-                    .font_medium()
-                    .child(value),
-            )
-    }
 }
 
 impl Render for ConnectionView {
@@ -239,48 +188,41 @@ impl Render for ConnectionView {
         let has_info = config.has_info() && !has_error;
 
         // Header
-        let header = h_flex()
-            .items_center()
+        let header = v_flex()
+            .items_start()
             .gap_2()
             .child(
                 h_flex()
                     .items_center()
-                    .justify_center()
                     .size_8()
                     .flex_shrink_0()
                     .rounded_md()
-                    .bg(theme.primary.opacity(0.12))
-                    .text_color(theme.primary)
-                    .child(Icon::new(ConnectionIcon::Plug).size_4()),
-            )
-            .child(
-                v_flex()
-                    .gap_0p5()
+                    .child(Icon::new(ConnectionIcon::Plug).size_4())
                     .child(
                         div()
                             .text_lg()
                             .font_semibold()
                             .text_color(theme.foreground)
                             .child("New Connection"),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child("Configure a database connection"),
                     ),
+            )
+            .child(
+                div()
+                    .text_xs()
+                    .text_color(theme.muted_foreground)
+                    .child("Configure a database connection"),
             );
 
         // Name + Label row
         let id_row = h_flex()
             .gap_4()
-            .child(v_flex().flex_1().child(Self::field(
+            .child(v_flex().flex_1().child(Field::new(
                 "Name",
                 "Friendly Name",
                 Input::new(&self.name_input),
                 theme,
             )))
-            .child(v_flex().flex_1().child(Self::field(
+            .child(v_flex().flex_1().child(Field::new(
                 "Label",
                 "Group · Optional",
                 Input::new(&self.label_input),
@@ -310,136 +252,6 @@ impl Render for ConnectionView {
                     ),
             )
             .child(url_input);
-
-        // Live preview / status area
-        let preview = if has_error {
-            let err = self.parse_error.clone().unwrap_or_default();
-            h_flex()
-                .items_start()
-                .gap_2()
-                .p_3()
-                .rounded_md()
-                .bg(theme.danger.opacity(0.1))
-                .border_1()
-                .border_color(theme.danger.opacity(0.3))
-                .child(
-                    Icon::new(IconName::TriangleAlert)
-                        .size_4()
-                        .flex_shrink_0()
-                        .text_color(theme.danger),
-                )
-                .child(
-                    v_flex()
-                        .gap_0p5()
-                        .child(
-                            div()
-                                .text_sm()
-                                .font_medium()
-                                .text_color(theme.danger)
-                                .child("Invalid URL"),
-                        )
-                        .child(
-                            div()
-                                .text_xs()
-                                .text_color(theme.muted_foreground)
-                                .child(err),
-                        ),
-                )
-        } else if has_info {
-            let db_type = SharedString::from(config.database_type.as_str());
-            let db_icon = config.database_type.icon();
-            let mut body = h_flex().items_start().gap_3().flex_wrap();
-
-            // Database type chip
-            body = body.child(
-                h_flex()
-                    .items_center()
-                    .gap_1p5()
-                    .px_2()
-                    .py_1()
-                    .rounded_md()
-                    .bg(theme.primary.opacity(0.12))
-                    .child(Icon::new(db_icon).size_4().text_color(theme.primary))
-                    .child(
-                        div()
-                            .text_sm()
-                            .font_medium()
-                            .text_color(theme.primary)
-                            .child(db_type),
-                    ),
-            );
-
-            // Detail pills
-            let mut details = v_flex().gap_1();
-
-            let mut first_row = h_flex().gap_2().flex_wrap();
-
-            if let Some(host) = config.host.clone() {
-                first_row = first_row.child(Self::info_pill("host", host, theme));
-            }
-            if let Some(port) = config.port.clone() {
-                first_row = first_row.child(Self::info_pill("port", port, theme));
-            }
-            if let Some(db) = config.database.clone() {
-                first_row = first_row.child(Self::info_pill("db", db, theme));
-            }
-            details = details.child(first_row);
-
-            let mut second_row = h_flex().gap_2().flex_wrap();
-            let mut has_second = false;
-            if let Some(user) = config.username.clone() {
-                second_row = second_row.child(Self::info_pill("user", user, theme));
-                has_second = true;
-            }
-            if !config.query_params.is_empty() {
-                second_row = second_row.child(Self::info_pill(
-                    "params",
-                    SharedString::from(format!("{} item(s)", config.query_params.len())),
-                    theme,
-                ));
-                has_second = true;
-            }
-            if has_second {
-                details = details.child(second_row);
-            }
-
-            body = body.child(
-                details.child(
-                    h_flex()
-                        .items_center()
-                        .gap_1()
-                        .text_xs()
-                        .text_color(theme.muted_foreground)
-                        .child(Icon::new(IconName::CircleCheck).size_3())
-                        .child("Parsed from URL"),
-                ),
-            );
-
-            body.p_3()
-                .rounded_md()
-                .bg(theme.secondary.opacity(0.5))
-                .border_1()
-                .border_color(theme.border)
-        } else {
-            h_flex()
-                .items_center()
-                .gap_2()
-                .p_3()
-                .rounded_md()
-                .bg(theme.muted.opacity(0.4))
-                .child(
-                    Icon::new(IconName::Info)
-                        .size_4()
-                        .flex_shrink_0()
-                        .text_color(theme.muted_foreground),
-                )
-                .child(
-                    div()
-                        .text_xs()
-                        .text_color(theme.muted_foreground)
-                        .child("Enter a valid connection URL to see a live preview."),
-                )
-        };
 
         // Footer actions
         let mut footer_left = h_flex().items_center().gap_1p5();
@@ -475,14 +287,21 @@ impl Render for ConnectionView {
             h_flex()
                 .items_center()
                 .gap_2()
-                .child(Button::new("cancel").label("Cancel").ghost())
+                .child(Button::new("cancel").label("Cancel").on_click(|_, _, _| {}))
                 .child(
                     Button::new("test")
                         .label("Test")
                         .outline()
-                        .icon(ConnectionIcon::Plug),
+                        .icon(ConnectionIcon::Plug)
+                        .secondary()
+                        .on_click(|_, _, _| {}),
                 )
-                .child(Button::new("save").label("Save").primary()),
+                .child(
+                    Button::new("save")
+                        .label("Save")
+                        .primary()
+                        .on_click(|_, _, _| {}),
+                ),
         );
 
         let footer = h_flex()
@@ -502,7 +321,6 @@ impl Render for ConnectionView {
             .child(Separator::horizontal())
             .child(id_row)
             .child(url_field)
-            .child(preview)
             .child(Separator::horizontal())
             .child(footer)
     }

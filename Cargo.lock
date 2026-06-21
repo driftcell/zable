@@ -8117,6 +8117,17 @@ dependencies = [
  "serde",
  "serde_json",
  "url",
+ "zable-components",
+]
+
+[[package]]
+name = "zable-components"
+version = "0.1.0"
+dependencies = [
+ "gpui",
+ "gpui-component",
+ "gpui-component-assets",
+ "gpui_platform",
 ]
 
 [[package]]

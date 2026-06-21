@@ -1,10 +1,14 @@
-[package]
+[workspace]
+resolver = "3"
+members = ["crates/zable", "crates/zable-components"]
+
+[workspace.package]
 name = "zable"
 authors = ["driftcell <driftcell@icloud.com>"]
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
+[workspace.dependencies]
 # For rendering and components
 gpui = { git = "https://github.com/zed-industries/zed", rev = "1d217ee39d381ac101b7cf49d3d22451ac1093fe" }
 gpui_platform = { git = "https://github.com/zed-industries/zed", rev = "1d217ee39d381ac101b7cf49d3d22451ac1093fe", features = ["font-kit"] }
