@@ -6,6 +6,8 @@ use rust_embed::RustEmbed;
 use std::borrow::Cow;
 use zable_connection_ui::ConnectionView;
 
+actions!(zable, [Quit]);
+
 /// An asset source that loads assets from the `./assets` folder.
 #[derive(RustEmbed)]
 #[folder = "../../assets"]
@@ -59,16 +61,33 @@ impl Render for RootView {
         )
     }
 }
+
 fn main() {
     gpui_platform::application()
         .with_assets(Assets)
         .run(move |cx| {
             gpui_component::init(cx);
+
+            cx.on_action(|_quit: &Quit, cx| cx.quit());
+            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+            cx.set_menus(vec![
+                Menu::new("Zable").items(vec![MenuItem::action("Quit Zable", Quit)]),
+            ]);
+
             cx.spawn(async move |cx| {
-                cx.open_window(WindowOptions::default(), |window, cx| {
-                    let view = cx.new(|_cx| RootView);
-                    cx.new(|cx| Root::new(view, window, cx))
-                })
+                cx.open_window(
+                    WindowOptions {
+                        titlebar: Some(TitlebarOptions {
+                            appears_transparent: true,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                    |window, cx| {
+                        let view = cx.new(|_cx| RootView);
+                        cx.new(|cx| Root::new(view, window, cx))
+                    },
+                )
                 .expect("Failed to open window");
             })
             .detach();
