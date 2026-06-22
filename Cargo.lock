@@ -8118,6 +8118,7 @@ dependencies = [
  "serde_json",
  "url",
  "zable-components",
+ "zable-connection-ui",
 ]
 
 [[package]]
@@ -8128,6 +8129,22 @@ dependencies = [
  "gpui-component",
  "gpui-component-assets",
  "gpui_platform",
+]
+
+[[package]]
+name = "zable-connection-ui"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "gpui",
+ "gpui-component",
+ "gpui-component-assets",
+ "gpui_platform",
+ "rust-embed",
+ "serde",
+ "serde_json",
+ "url",
+ "zable-components",
 ]
 
 [[package]]

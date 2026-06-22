@@ -1,13 +1,10 @@
 use gpui::*;
 
-mod views;
-
 use anyhow::anyhow;
 use gpui_component::{IconName, Root, button::Button};
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
-
-use crate::views::ConnectionView;
+use zable_connection_ui::ConnectionView;
 
 /// An asset source that loads assets from the `./assets` folder.
 #[derive(RustEmbed)]

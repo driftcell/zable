@@ -1,8 +1,11 @@
 [package]
-name = "zable"
+name = "zable-connection-ui"
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
+
+[lib]
+path = "src/zable-connection-ui.rs"
 
 [dependencies]
 anyhow.workspace = true
@@ -16,4 +19,3 @@ serde_json.workspace = true
 url.workspace = true
 
 zable-components = { path = "../zable-components" }
-zable-connection-ui = { path = "../zable-connection-ui" }
