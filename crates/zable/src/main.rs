@@ -1,7 +1,7 @@
 use gpui::*;
 
 use anyhow::anyhow;
-use gpui_component::{IconName, Root, button::Button};
+use gpui_component::{IconName, Root, WindowExt, button::Button};
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 use zable_connection_ui::ConnectionView;
@@ -35,30 +35,24 @@ impl AssetSource for Assets {
 struct RootView;
 
 impl Render for RootView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().child(
-            Button::new("open_connection_config")
-                .label("New Connection")
-                .icon(IconName::Plus)
-                .on_click(|_, _, cx| {
-                    let bounds = WindowBounds::centered(Size::new(px(640.), px(400.)), cx);
-                    cx.open_window(
-                        WindowOptions {
-                            window_bounds: Some(bounds),
-                            kind: WindowKind::Dialog,
-                            is_movable: false,
-                            is_resizable: false,
-                            is_minimizable: false,
-                            ..Default::default()
-                        },
-                        |window, cx| {
-                            let view = cx.new(|cx| ConnectionView::new(window, cx));
-                            cx.new(|cx| Root::new(view, window, cx))
-                        },
-                    )
-                    .expect("Failed to open window");
-                }),
-        )
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .child(
+                Button::new("open_connection_config")
+                    .label("New Connection")
+                    .icon(IconName::Plus)
+                    .on_click(cx.listener(|_this, _, window, cx| {
+                        let view = cx.new(|cx| ConnectionView::new(window, cx));
+                        window.open_dialog(cx, move |dialog, _window, _cx| {
+                            dialog
+                                .title("New Connection")
+                                .width(px(640.))
+                                .child(view.clone())
+                        });
+                    })),
+            )
+            .children(Root::render_dialog_layer(window, cx))
+            .children(Root::render_sheet_layer(window, cx))
     }
 }
 

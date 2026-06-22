@@ -6,7 +6,7 @@ use gpui::{
     AppContext, Context, Entity, ParentElement, Render, SharedString, Styled, Window, div, px,
 };
 use gpui_component::{
-    ActiveTheme, Icon, IconName, IconNamed, StyledExt,
+    ActiveTheme, Icon, IconName, IconNamed, StyledExt, WindowExt,
     button::{Button, ButtonVariants},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -290,8 +290,8 @@ impl Render for ConnectionView {
                 .child(
                     Button::new("cancel")
                         .label("Cancel")
-                        .on_click(|_, window, _| {
-                            window.remove_window();
+                        .on_click(|_, window, cx| {
+                            window.close_dialog(cx);
                         }),
                 )
                 .child(
