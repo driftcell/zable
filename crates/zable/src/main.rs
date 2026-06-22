@@ -40,14 +40,13 @@ impl Render for RootView {
                 .icon(IconName::Plus)
                 .on_click(|_, _, cx| {
                     let bounds = WindowBounds::centered(Size::new(px(640.), px(400.)), cx);
-                    let titlebar_option = TitlebarOptions {
-                        title: Some("New Connection".into()),
-                        ..Default::default()
-                    };
                     cx.open_window(
                         WindowOptions {
                             window_bounds: Some(bounds),
-                            titlebar: Some(titlebar_option),
+                            kind: WindowKind::Dialog,
+                            is_movable: false,
+                            is_resizable: false,
+                            is_minimizable: false,
                             ..Default::default()
                         },
                         |window, cx| {

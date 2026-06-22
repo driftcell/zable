@@ -287,7 +287,13 @@ impl Render for ConnectionView {
             h_flex()
                 .items_center()
                 .gap_2()
-                .child(Button::new("cancel").label("Cancel").on_click(|_, _, _| {}))
+                .child(
+                    Button::new("cancel")
+                        .label("Cancel")
+                        .on_click(|_, window, _| {
+                            window.remove_window();
+                        }),
+                )
                 .child(
                     Button::new("test")
                         .label("Test")
