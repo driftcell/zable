@@ -10,8 +10,8 @@ pub fn init(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
     }
 
-    // Windows
-    #[cfg(target_os = "windows")]
+    // Windows & Linux
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     {
         cx.bind_keys([KeyBinding::new("ctrl-q", Quit, None)]);
     }
