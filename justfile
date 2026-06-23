@@ -22,3 +22,14 @@ jjc msg:
 [group: 'jj']
 jjl:
     jj log
+
+# Just lint = fmt + clippy
+[group: 'lint']
+lint:
+    cargo fmt
+    cargo clippy --fix --allow-dirty
+
+# Just test = nextest
+[group: 'test']
+test:
+    cargo nextest run --all-features --profile default --no-tests pass
