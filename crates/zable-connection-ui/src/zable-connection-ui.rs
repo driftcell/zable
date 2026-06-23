@@ -1,7 +1,5 @@
 use zable_components::field::Field;
 
-use std::collections::HashMap;
-
 use gpui::{
     AppContext, Context, Entity, ParentElement, Render, SharedString, Styled, Window, div, px,
 };
@@ -14,7 +12,7 @@ use gpui_component::{
     separator::Separator,
     v_flex,
 };
-use serde::Serialize;
+use zable_core::ConnectionConfig;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConnectionIcon {
@@ -27,109 +25,6 @@ impl IconNamed for ConnectionIcon {
             ConnectionIcon::Plug => "icons/plug.svg",
         }
         .into()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub enum DatabaseType {
-    Postgres,
-    MySql,
-    Other(String),
-}
-
-impl DatabaseType {
-    fn from_schema(schema: &str) -> Self {
-        match schema {
-            "postgres" | "postgresql" => DatabaseType::Postgres,
-            "mysql" => DatabaseType::MySql,
-            _ => DatabaseType::Other(schema.to_string()),
-        }
-    }
-
-    #[allow(dead_code)]
-    fn as_str(&self) -> &str {
-        match self {
-            DatabaseType::Postgres => "PostgreSQL",
-            DatabaseType::MySql => "MySQL",
-            DatabaseType::Other(s) => s.as_str(),
-        }
-    }
-
-    #[allow(dead_code)]
-    /// A representative icon for the database type.
-    fn icon(&self) -> IconName {
-        IconName::HardDrive
-    }
-}
-
-#[derive(Serialize)]
-pub struct ConnectionConfig {
-    pub database_type: DatabaseType,
-    pub username: Option<SharedString>,
-    pub password: Option<SharedString>,
-    pub host: Option<SharedString>,
-    pub port: Option<SharedString>,
-    pub database: Option<SharedString>,
-    pub query_params: HashMap<SharedString, SharedString>,
-}
-
-impl ConnectionConfig {
-    pub fn parse(url: &str) -> Result<Self, url::ParseError> {
-        let parsed = url::Url::parse(url)?;
-
-        Ok(Self {
-            database_type: DatabaseType::from_schema(parsed.scheme()),
-            host: parsed.host_str().map(SharedString::from),
-            port: parsed.port().map(|p| p.to_string()).map(SharedString::from),
-            username: {
-                let u = parsed.username();
-                if u.is_empty() {
-                    None
-                } else {
-                    Some(SharedString::from(u))
-                }
-            },
-            password: parsed.password().map(SharedString::from),
-            database: {
-                let db = parsed.path().trim_start_matches('/');
-                if db.is_empty() {
-                    None
-                } else {
-                    Some(SharedString::from(db))
-                }
-            },
-            query_params: parsed
-                .query_pairs()
-                .map(|(k, v)| {
-                    (
-                        SharedString::from(k.as_ref()),
-                        SharedString::from(v.as_ref()),
-                    )
-                })
-                .collect(),
-        })
-    }
-
-    /// Empty placeholder for when no URL has been entered yet.
-    pub fn empty() -> Self {
-        Self {
-            database_type: DatabaseType::Other(String::new()),
-            username: None,
-            password: None,
-            host: None,
-            port: None,
-            database: None,
-            query_params: HashMap::new(),
-        }
-    }
-
-    /// Whether any meaningful field has been parsed from the URL.
-    fn has_info(&self) -> bool {
-        self.host.is_some()
-            || self.port.is_some()
-            || self.username.is_some()
-            || self.database.is_some()
-            || !self.query_params.is_empty()
     }
 }
 

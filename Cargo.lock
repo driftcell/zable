@@ -8160,6 +8160,16 @@ dependencies = [
  "serde_json",
  "url",
  "zable-components",
+ "zable-core",
+]
+
+[[package]]
+name = "zable-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "url",
 ]
 
 [[package]]

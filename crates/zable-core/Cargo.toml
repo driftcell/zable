@@ -1,0 +1,13 @@
+[package]
+name = "zable-core"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = 'src/zable-core.rs'
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true

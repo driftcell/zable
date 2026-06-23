@@ -19,3 +19,4 @@ serde_json.workspace = true
 url.workspace = true
 
 zable-components = { path = "../zable-components" }
+zable-core = { path = "../zable-core" }
