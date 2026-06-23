@@ -1,10 +1,10 @@
-use zable_components::field::Field;
+use zable_components::{field::Field, icons::ZableIcon};
 
 use gpui::{
     AppContext, Context, Entity, ParentElement, Render, SharedString, Styled, Window, div, px,
 };
 use gpui_component::{
-    ActiveTheme, Icon, IconName, IconNamed, StyledExt, WindowExt,
+    ActiveTheme, Icon, StyledExt, WindowExt,
     button::{Button, ButtonVariants},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -13,20 +13,6 @@ use gpui_component::{
     v_flex,
 };
 use zable_core::ConnectionConfig;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ConnectionIcon {
-    Plug,
-}
-
-impl IconNamed for ConnectionIcon {
-    fn path(self) -> SharedString {
-        match self {
-            ConnectionIcon::Plug => "icons/plug.svg",
-        }
-        .into()
-    }
-}
 
 pub struct ConnectionView {
     name_input: Entity<InputState>,
@@ -92,7 +78,7 @@ impl Render for ConnectionView {
                     .size_8()
                     .flex_shrink_0()
                     .rounded_md()
-                    .child(Icon::new(ConnectionIcon::Plug).size_4())
+                    .child(Icon::new(ZableIcon::Plug).size_4())
                     .child(
                         div()
                             .text_lg()
@@ -153,7 +139,7 @@ impl Render for ConnectionView {
         if has_error {
             footer_left = footer_left
                 .child(
-                    Icon::new(IconName::TriangleAlert)
+                    Icon::new(ZableIcon::CircleAlert)
                         .size_3p5()
                         .text_color(theme.danger),
                 )
@@ -166,7 +152,7 @@ impl Render for ConnectionView {
         } else if has_info {
             footer_left = footer_left
                 .child(
-                    Icon::new(IconName::CircleCheck)
+                    Icon::new(ZableIcon::CircleCheck)
                         .size_3p5()
                         .text_color(theme.success),
                 )
@@ -193,7 +179,7 @@ impl Render for ConnectionView {
                     Button::new("test")
                         .label("Test")
                         .outline()
-                        .icon(ConnectionIcon::Plug)
+                        .icon(ZableIcon::Plug)
                         .secondary()
                         .on_click(|_, _, _| {}),
                 )

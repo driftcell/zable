@@ -5,7 +5,8 @@ mod menus;
 
 use gpui::*;
 
-use gpui_component::{IconName, Root, WindowExt, button::Button};
+use gpui_component::{Root, WindowExt, button::Button};
+use zable_components::icons::ZableIcon;
 use zable_connection_ui::ConnectionView;
 
 use crate::assets::Assets;
@@ -18,7 +19,7 @@ impl Render for RootView {
             .child(
                 Button::new("open_connection_config")
                     .label("New Connection")
-                    .icon(IconName::Plus)
+                    .icon(ZableIcon::Plus)
                     .on_click(cx.listener(|_this, _, window, cx| {
                         let view = cx.new(|cx| ConnectionView::new(window, cx));
                         window.open_dialog(cx, move |dialog, _window, _cx| {
