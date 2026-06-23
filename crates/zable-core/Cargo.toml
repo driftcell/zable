@@ -16,3 +16,4 @@ url.workspace = true
 gpui.workspace = true
 tokio.workspace = true
 tokio-postgres.workspace = true
+percent-encoding.workspace = true

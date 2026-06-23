@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
+use percent_encoding::percent_decode_str;
 use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
@@ -42,7 +43,7 @@ impl DatabaseType {
     }
 }
 
-#[derive(Serialize, Default, Clone)]
+#[derive(Serialize, Default, Clone, Debug)]
 pub struct ConnectionConfig {
     pub database_type: DatabaseType,
     pub username: String,
@@ -64,7 +65,9 @@ impl ConnectionConfig {
             .to_string();
         let port = parsed.port().unwrap_or(5432);
         let username = parsed.username().to_string();
-        let password = parsed.password().map(String::from);
+        let password = parsed
+            .password()
+            .map(|p| percent_decode_str(p).decode_utf8().unwrap().to_string());
         let database = {
             let db = parsed.path().trim_start_matches('/');
             match db.is_empty() {

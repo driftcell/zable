@@ -7,6 +7,7 @@ pub enum ZableIcon {
     Plus,
     CircleCheck,
     CircleAlert,
+    Check,
 }
 
 impl IconNamed for ZableIcon {
@@ -16,6 +17,7 @@ impl IconNamed for ZableIcon {
             ZableIcon::Plus => "icons/plus.svg",
             ZableIcon::CircleCheck => "icons/circle-check.svg",
             ZableIcon::CircleAlert => "icons/circle-alert.svg",
+            ZableIcon::Check => "icons/check.svg",
         }
         .into()
     }

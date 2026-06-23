@@ -41,6 +41,8 @@ impl ConnectionView {
 
         cx.subscribe_in(&url_input, window, |this, input, event, _window, cx| {
             if let InputEvent::Change = event {
+                this.test_result = None;
+
                 let raw = input.read(cx).value();
 
                 if raw.is_empty() {
@@ -174,6 +176,8 @@ impl Render for ConnectionView {
             )
             .child(url_input);
 
+        let is_empty = self.url_input.read(cx).value().is_empty();
+
         // Footer actions
         let mut footer_left = h_flex().items_center().gap_1p5();
         if has_error {
@@ -189,7 +193,7 @@ impl Render for ConnectionView {
                         .text_color(theme.danger)
                         .child("Please fix the error before saving."),
                 );
-        } else {
+        } else if !is_empty && self.parse_error.is_none() {
             footer_left = footer_left
                 .child(
                     Icon::new(ZableIcon::CircleCheck)
@@ -225,11 +229,13 @@ impl Render for ConnectionView {
                 )
                 .child(
                     Button::new("test")
-                        .label("Test")
+                        .disabled(self.parse_error.is_some() || self.is_testing || is_empty)
+                        .map(|this| match &self.test_result {
+                            Some(_) => this.icon(ZableIcon::Check).label("Tested").disabled(true),
+                            None => this.icon(ZableIcon::Plug).label("Test"),
+                        })
                         .outline()
-                        .icon(ZableIcon::Plug)
                         .secondary()
-                        .disabled(self.is_testing)
                         .on_click(cx.listener(|this, _, _, cx| {
                             this.handle_test_connection(cx);
                         })),
