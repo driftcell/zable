@@ -8,6 +8,10 @@ edition.workspace = true
 path = 'src/zable-core.rs'
 
 [dependencies]
+anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 url.workspace = true
+gpui.workspace = true
+tokio.workspace = true
+tokio-postgres.workspace = true

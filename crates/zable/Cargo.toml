@@ -18,3 +18,4 @@ url.workspace = true
 
 zable-components = { path = "../zable-components" }
 zable-connection-ui = { path = "../zable-connection-ui" }
+zable-core = { path = "../zable-core" }

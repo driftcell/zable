@@ -42,6 +42,7 @@ fn main() {
         .run(move |cx| {
             gpui_component::init(cx);
 
+            zable_core::init(cx);
             actions::init(cx);
             keybindings::init(cx);
             menus::init(cx);

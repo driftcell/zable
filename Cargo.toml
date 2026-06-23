@@ -25,3 +25,6 @@ rust-embed = "8.11.0"
 
 # For async task
 tokio = { version = "1", features = ["full"] }
+
+# For database
+tokio-postgres = { version = "0.7" }
