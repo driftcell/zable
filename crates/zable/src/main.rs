@@ -1,36 +1,14 @@
+mod actions;
+mod assets;
+mod keybindings;
+mod menus;
+
 use gpui::*;
 
-use anyhow::anyhow;
 use gpui_component::{IconName, Root, WindowExt, button::Button};
-use rust_embed::RustEmbed;
-use std::borrow::Cow;
 use zable_connection_ui::ConnectionView;
 
-actions!(zable, [Quit]);
-
-/// An asset source that loads assets from the `./assets` folder.
-#[derive(RustEmbed)]
-#[folder = "../../assets"]
-#[include = "icons/**/*.svg"]
-pub struct Assets;
-
-impl AssetSource for Assets {
-    fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
-        if path.is_empty() {
-            return Ok(None);
-        }
-
-        Self::get(path)
-            .map(|f| Some(f.data))
-            .ok_or_else(|| anyhow!("could not find asset at path \"{path}\""))
-    }
-
-    fn list(&self, path: &str) -> Result<Vec<SharedString>> {
-        Ok(Self::iter()
-            .filter_map(|p| p.starts_with(path).then(|| p.into()))
-            .collect())
-    }
-}
+use crate::assets::Assets;
 
 struct RootView;
 
@@ -62,11 +40,9 @@ fn main() {
         .run(move |cx| {
             gpui_component::init(cx);
 
-            cx.on_action(|_quit: &Quit, cx| cx.quit());
-            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
-            cx.set_menus(vec![
-                Menu::new("Zable").items(vec![MenuItem::action("Quit Zable", Quit)]),
-            ]);
+            actions::init(cx);
+            keybindings::init(cx);
+            menus::init(cx);
 
             cx.spawn(async move |cx| {
                 cx.open_window(
