@@ -1,9 +1,23 @@
 use std::collections::HashMap;
 
+use anyhow::Result;
 use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, thiserror::Error)]
+pub enum ConnUrlError {
+    #[error("Invalid URL: {0}")]
+    InvalidUrl(#[from] url::ParseError),
+
+    #[error("Unsupported scheme: {0}")]
+    UnsupportedScheme(String),
+
+    #[error("Missing host")]
+    MissingHost,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
 pub enum DatabaseType {
+    #[default]
     Postgres,
     MySql,
     Other(String),
@@ -28,86 +42,49 @@ impl DatabaseType {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default, Clone)]
 pub struct ConnectionConfig {
     pub database_type: DatabaseType,
-    pub username: Option<String>,
+    pub username: String,
     pub password: Option<String>,
-    pub host: Option<String>,
-    pub port: Option<String>,
-    pub database: Option<String>,
+    pub host: String,
+    pub port: u16,
+    pub database: String,
     pub query_params: HashMap<String, String>,
 }
 
 impl ConnectionConfig {
-    pub fn parse(url: &str) -> Result<Self, url::ParseError> {
+    pub fn parse(url: &str) -> Result<Self> {
         let parsed = url::Url::parse(url)?;
 
+        let database_type = DatabaseType::from_schema(parsed.scheme());
+        let host = parsed
+            .host_str()
+            .ok_or(ConnUrlError::MissingHost)?
+            .to_string();
+        let port = parsed.port().unwrap_or(5432);
+        let username = parsed.username().to_string();
+        let password = parsed.password().map(String::from);
+        let database = {
+            let db = parsed.path().trim_start_matches('/');
+            match db.is_empty() {
+                true => "postgres".into(),
+                false => String::from(db),
+            }
+        };
+        let query_params = parsed
+            .query_pairs()
+            .map(|(k, v)| (String::from(k.as_ref()), String::from(v.as_ref())))
+            .collect();
+
         Ok(Self {
-            database_type: DatabaseType::from_schema(parsed.scheme()),
-            host: parsed.host_str().map(String::from),
-            port: parsed.port().map(|p| p.to_string()),
-            username: {
-                let u = parsed.username();
-                if u.is_empty() {
-                    None
-                } else {
-                    Some(String::from(u))
-                }
-            },
-            password: parsed.password().map(String::from),
-            database: {
-                let db = parsed.path().trim_start_matches('/');
-                if db.is_empty() {
-                    None
-                } else {
-                    Some(String::from(db))
-                }
-            },
-            query_params: parsed
-                .query_pairs()
-                .map(|(k, v)| (String::from(k.as_ref()), String::from(v.as_ref())))
-                .collect(),
+            database_type,
+            host,
+            port,
+            username,
+            password,
+            database,
+            query_params,
         })
-    }
-
-    /// Empty placeholder for when no URL has been entered yet.
-    pub fn empty() -> Self {
-        Self {
-            database_type: DatabaseType::Other(String::new()),
-            username: None,
-            password: None,
-            host: None,
-            port: None,
-            database: None,
-            query_params: HashMap::new(),
-        }
-    }
-
-    /// Whether any meaningful field has been parsed from the URL.
-    pub fn has_info(&self) -> bool {
-        self.host.is_some()
-            || self.port.is_some()
-            || self.username.is_some()
-            || self.database.is_some()
-            || !self.query_params.is_empty()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_has_info() {
-        let config =
-            ConnectionConfig::parse("postgres://user:pass@localhost:5432/db?param=value").unwrap();
-        assert!(config.has_info());
-    }
-
-    #[test]
-    fn test_has_no_info() {
-        let config = ConnectionConfig::parse("postgres://").unwrap();
-        assert!(!config.has_info());
     }
 }

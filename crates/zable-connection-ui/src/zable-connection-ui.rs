@@ -1,10 +1,15 @@
 use zable_components::{field::Field, icons::ZableIcon};
+use zable_core::{
+    Tokio,
+    postgres::{PgServerInfo, check_pg_connection},
+};
 
 use gpui::{
-    AppContext, Context, Entity, ParentElement, Render, SharedString, Styled, Window, div, px,
+    AppContext, Context, Entity, ParentElement, Render, SharedString, Styled, Window, div,
+    prelude::FluentBuilder, px,
 };
 use gpui_component::{
-    ActiveTheme, Icon, StyledExt, WindowExt,
+    ActiveTheme, Disableable, Icon, StyledExt, WindowExt,
     button::{Button, ButtonVariants},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -20,6 +25,8 @@ pub struct ConnectionView {
     label_input: Entity<InputState>,
     config: ConnectionConfig,
     parse_error: Option<SharedString>,
+    is_testing: bool,
+    test_result: Option<PgServerInfo>,
 }
 
 impl ConnectionView {
@@ -35,6 +42,13 @@ impl ConnectionView {
         cx.subscribe_in(&url_input, window, |this, input, event, _window, cx| {
             if let InputEvent::Change = event {
                 let raw = input.read(cx).value();
+
+                if raw.is_empty() {
+                    this.parse_error = None;
+                    cx.notify();
+                    return;
+                }
+
                 match ConnectionConfig::parse(&raw) {
                     Ok(cfg) => {
                         this.config = cfg;
@@ -53,9 +67,37 @@ impl ConnectionView {
             name_input,
             url_input,
             label_input,
-            config: ConnectionConfig::empty(),
+            config: ConnectionConfig::default(),
             parse_error: None,
+            is_testing: false,
+            test_result: None,
         }
+    }
+
+    fn handle_test_connection(&mut self, cx: &mut Context<Self>) {
+        let config = self.config.clone();
+
+        let task = Tokio::spawn(cx, async move { check_pg_connection(&config).await });
+
+        self.is_testing = true;
+        cx.notify();
+
+        cx.spawn(async move |this, cx| {
+            let outcome = task.await;
+
+            this.update(cx, |this, cx| {
+                this.is_testing = false;
+                this.test_result = {
+                    match outcome {
+                        Ok(Ok(info)) => Some(info),
+                        Ok(Err(_)) => None,
+                        Err(_) => None,
+                    }
+                };
+                cx.notify();
+            })
+        })
+        .detach();
     }
 }
 
@@ -64,9 +106,7 @@ impl Render for ConnectionView {
         // Copy the colors out so we don't hold an immutable borrow of `cx`
         // across calls that need `&mut cx`.
         let theme = cx.theme().colors;
-        let config = &self.config;
         let has_error = self.parse_error.is_some();
-        let has_info = config.has_info() && !has_error;
 
         // Header
         let header = v_flex()
@@ -149,7 +189,7 @@ impl Render for ConnectionView {
                         .text_color(theme.danger)
                         .child("Please fix the error before saving."),
                 );
-        } else if has_info {
+        } else {
             footer_left = footer_left
                 .child(
                     Icon::new(ZableIcon::CircleCheck)
@@ -161,7 +201,15 @@ impl Render for ConnectionView {
                         .text_xs()
                         .text_color(theme.muted_foreground)
                         .child("URL is valid."),
-                );
+                )
+                .when_some(self.test_result.as_ref(), |this, test_result| {
+                    this.child(
+                        div()
+                            .text_xs()
+                            .text_color(theme.muted_foreground)
+                            .child(format!("{}ms", test_result.elapsed.as_millis())),
+                    )
+                });
         }
 
         let footer_actions = h_flex().items_center().gap_2().child(
@@ -181,7 +229,10 @@ impl Render for ConnectionView {
                         .outline()
                         .icon(ZableIcon::Plug)
                         .secondary()
-                        .on_click(|_, _, _| {}),
+                        .disabled(self.is_testing)
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            this.handle_test_connection(cx);
+                        })),
                 )
                 .child(
                     Button::new("save")

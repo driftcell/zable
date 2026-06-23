@@ -1,3 +1,4 @@
+pub mod postgres;
 pub mod tokio_bridge;
 pub mod types;
 
