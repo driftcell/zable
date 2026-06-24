@@ -34,3 +34,6 @@ tokio = { version = "1", features = ["full"] }
 
 # For database
 tokio-postgres = { version = "0.7" }
+
+# For filesystem
+directories = { version = "6.0" }

@@ -1,6 +1,8 @@
+use directories::ProjectDirs;
 use zable_components::{field::Field, icons::ZableIcon};
 use zable_core::{
     Tokio,
+    config::AppConfig,
     postgres::{PgServerInfo, check_pg_connection},
 };
 
@@ -100,6 +102,38 @@ impl ConnectionView {
             })
         })
         .detach();
+    }
+
+    fn handle_save(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(project_dirs) = ProjectDirs::from("com", "zable", "zable") {
+            let mut config = AppConfig::default();
+
+            config.insert_entry(
+                self.name_input.read(cx).value().to_string().as_str(),
+                self.label_input.read(cx).value().to_string().as_str(),
+                &self.config,
+            );
+
+            cx.spawn(async move |_, _| {
+                let config_path = project_dirs.config_dir().join("config.json");
+
+                let app_config = AppConfig::read(&config_path);
+
+                // TODO: handle error
+                match app_config {
+                    Ok(mut app_config) => {
+                        app_config.merge(&config);
+                        let _ = app_config.write(&config_path);
+                    }
+                    Err(_) => {
+                        let _ = config.write(&config_path);
+                    }
+                }
+            })
+            .detach();
+
+            window.close_dialog(cx);
+        }
     }
 }
 
@@ -244,7 +278,9 @@ impl Render for ConnectionView {
                     Button::new("save")
                         .label("Save")
                         .primary()
-                        .on_click(|_, _, _| {}),
+                        .on_click(cx.listener(|this, _, window, cx| {
+                            this.handle_save(window, cx);
+                        })),
                 ),
         );
 

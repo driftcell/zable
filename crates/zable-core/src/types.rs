@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use percent_encoding::percent_decode_str;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnUrlError {
@@ -16,7 +16,7 @@ pub enum ConnUrlError {
     MissingHost,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum DatabaseType {
     #[default]
     Postgres,
@@ -43,7 +43,7 @@ impl DatabaseType {
     }
 }
 
-#[derive(Serialize, Default, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct ConnectionConfig {
     pub database_type: DatabaseType,
     pub username: String,
