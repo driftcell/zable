@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -26,10 +26,10 @@ impl AppConfig {
         });
     }
 
-    pub fn read(path: &PathBuf) -> Result<Self, anyhow::Error> {
+    pub fn read(path: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
         let content = std::fs::read_to_string(path)?;
-        let entries: Vec<ConnectionEntry> = serde_json::from_str(&content)?;
-        Ok(Self { entries })
+        let entries: Self = serde_json::from_str(&content)?;
+        Ok(entries)
     }
 
     pub fn merge(&mut self, other: &Self) {
@@ -46,11 +46,11 @@ impl AppConfig {
         }
     }
 
-    pub fn write(&self, path: &PathBuf) -> Result<(), anyhow::Error> {
-        if let Some(parent) = path.parent() {
+    pub fn write(&self, path: impl AsRef<Path>) -> Result<(), anyhow::Error> {
+        if let Some(parent) = path.as_ref().parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let content = serde_json::to_string(&self)?;
+        let content = serde_json::to_string_pretty(&self)?;
         std::fs::write(path, content)?;
         Ok(())
     }
