@@ -23,10 +23,7 @@ impl Render for RootView {
                     .on_click(cx.listener(|_this, _, window, cx| {
                         let view = cx.new(|cx| ConnectionView::new(window, cx));
                         window.open_dialog(cx, move |dialog, _window, _cx| {
-                            dialog
-                                .title("New Connection")
-                                .width(px(640.))
-                                .child(view.clone())
+                            dialog.width(px(640.)).child(view.clone())
                         });
                     })),
             )

@@ -69,7 +69,10 @@ pub async fn check_pg_connection(cfg: &ConnectionConfig) -> Result<PgServerInfo>
         let _ = connection.await;
     });
 
-    let version: String = match client.query_one("SELECT version()", &[]).await {
+    let version: String = match client
+        .query_one("SELECT current_setting('server_version')", &[])
+        .await
+    {
         Ok(row) => row.get(0),
         Err(err) => {
             conn_task.abort();
