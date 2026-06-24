@@ -291,7 +291,7 @@ impl ConnectionView {
         .detach();
     }
 
-    fn handle_save_config(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_save_config(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let UrlStatus::Valid(config) = &self.url_status else {
             return;
         };
@@ -310,6 +310,8 @@ impl ConnectionView {
                 eprintln!("Failed to save config: {}", e);
             }
         }
+
+        window.close_dialog(cx);
     }
 }
 

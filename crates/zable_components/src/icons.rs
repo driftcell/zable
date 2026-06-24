@@ -9,6 +9,9 @@ pub enum ZableIcon {
     CircleAlert,
     Check,
     Loading,
+    Database,
+    Sun,
+    Moon,
 }
 
 impl IconNamed for ZableIcon {
@@ -20,6 +23,9 @@ impl IconNamed for ZableIcon {
             ZableIcon::CircleAlert => "icons/circle-alert.svg",
             ZableIcon::Check => "icons/check.svg",
             ZableIcon::Loading => "icons/loading.svg",
+            ZableIcon::Database => "icons/database.svg",
+            ZableIcon::Sun => "icons/sun.svg",
+            ZableIcon::Moon => "icons/moon.svg",
         }
         .into()
     }

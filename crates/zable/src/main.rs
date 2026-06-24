@@ -6,7 +6,7 @@ mod menus;
 use gpui::*;
 
 use gpui_component::{Root, WindowExt, button::Button};
-use zable_components::icons::ZableIcon;
+use zable_components::{icons::ZableIcon, top_bar::TopBar};
 use zable_connection_ui::ConnectionView;
 
 use crate::assets::Assets;
@@ -16,6 +16,7 @@ struct RootView;
 impl Render for RootView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
+            .child(TopBar)
             .child(
                 Button::new("open_connection_config")
                     .label("New Connection")
