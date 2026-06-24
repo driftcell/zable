@@ -8390,13 +8390,13 @@ dependencies = [
  "serde_json",
  "tokio",
  "url",
- "zable-components",
- "zable-connection-ui",
- "zable-core",
+ "zable_components",
+ "zable_connection_ui",
+ "zable_core",
 ]
 
 [[package]]
-name = "zable-components"
+name = "zable_components"
 version = "0.1.0"
 dependencies = [
  "gpui",
@@ -8406,7 +8406,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zable-connection-ui"
+name = "zable_connection_ui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -8420,12 +8420,12 @@ dependencies = [
  "serde_json",
  "tokio",
  "url",
- "zable-components",
- "zable-core",
+ "zable_components",
+ "zable_core",
 ]
 
 [[package]]
-name = "zable-core"
+name = "zable_core"
 version = "0.1.0"
 dependencies = [
  "anyhow",

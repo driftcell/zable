@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/zable", "crates/zable-components", "crates/zable-connection-ui", "crates/zable-core"]
+members = ["crates/zable", "crates/zable_components", "crates/zable_connection_ui", "crates/zable_core"]
 
 [workspace.package]
 authors = ["driftcell <driftcell@icloud.com>"]

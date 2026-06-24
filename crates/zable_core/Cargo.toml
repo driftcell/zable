@@ -1,11 +1,11 @@
 [package]
-name = "zable-core"
+name = "zable_core"
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
 
 [lib]
-path = 'src/zable-core.rs'
+path = 'src/zable_core.rs'
 
 [dependencies]
 anyhow.workspace = true

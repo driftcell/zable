@@ -1,11 +1,11 @@
 [package]
-name = "zable-components"
+name = "zable_components"
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
 
 [lib]
-path = "src/zable-components.rs"
+path = "src/zable_components.rs"
 
 [dependencies]
 gpui.workspace = true

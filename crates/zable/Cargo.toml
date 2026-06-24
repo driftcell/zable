@@ -16,6 +16,6 @@ serde_json.workspace = true
 tokio.workspace = true
 url.workspace = true
 
-zable-components = { path = "../zable-components" }
-zable-connection-ui = { path = "../zable-connection-ui" }
-zable-core = { path = "../zable-core" }
+zable_components = { path = "../zable_components" }
+zable_connection_ui = { path = "../zable_connection_ui" }
+zable_core = { path = "../zable_core" }

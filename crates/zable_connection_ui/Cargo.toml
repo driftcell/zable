@@ -1,11 +1,11 @@
 [package]
-name = "zable-connection-ui"
+name = "zable_connection_ui"
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
 
 [lib]
-path = "src/zable-connection-ui.rs"
+path = "src/zable_connection_ui.rs"
 
 [dependencies]
 anyhow.workspace = true
@@ -20,5 +20,5 @@ url.workspace = true
 tokio.workspace = true
 directories.workspace = true
 
-zable-components = { path = "../zable-components" }
-zable-core = { path = "../zable-core" }
+zable_components = { path = "../zable_components" }
+zable_core = { path = "../zable_core" }
