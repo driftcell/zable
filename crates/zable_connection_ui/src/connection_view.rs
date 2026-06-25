@@ -22,7 +22,13 @@ use zable_core::{
 enum UrlStatus {
     Empty,
     Invalid,
-    Valid(ConnectionConfig),
+    Valid(ValidConnection),
+}
+
+#[derive(Debug)]
+struct ValidConnection {
+    connection_config: ConnectionConfig,
+    test_status: TestStatus,
 }
 
 #[derive(Debug)]
@@ -45,7 +51,6 @@ pub struct ConnectionView {
     name_input: Entity<InputState>,
     label_input: Entity<InputState>,
     url_status: UrlStatus,
-    test_status: TestStatus,
 }
 
 impl ConnectionView {
@@ -61,10 +66,13 @@ impl ConnectionView {
             if let InputEvent::Change = event {
                 let raw = input.read(cx).value();
 
-                this.test_status = TestStatus::Idle;
-
                 match ConnectionConfig::parse(&raw) {
-                    Ok(config) => this.url_status = UrlStatus::Valid(config),
+                    Ok(config) => {
+                        this.url_status = UrlStatus::Valid(ValidConnection {
+                            connection_config: config,
+                            test_status: TestStatus::Idle,
+                        })
+                    }
                     Err(_) => this.url_status = UrlStatus::Invalid,
                 }
 
@@ -78,7 +86,6 @@ impl ConnectionView {
             name_input,
             label_input,
             url_status: UrlStatus::Empty,
-            test_status: TestStatus::Idle,
         }
     }
 }
@@ -190,18 +197,23 @@ impl ConnectionView {
                     .outline()
                     .secondary()
                     .label("Test")
-                    .map(|this| match (&self.url_status, &self.test_status) {
-                        (UrlStatus::Empty, _) => this.icon(ZableIcon::Plug).disabled(true),
-                        (UrlStatus::Valid(_), TestStatus::Tested(_)) => this
-                            .label("Tested")
-                            .icon(ZableIcon::CircleCheck)
-                            .disabled(true),
-                        (_, TestStatus::Testing) => this
-                            .label("Testing")
-                            .disabled(true)
-                            .loading(true)
-                            .loading_icon(ZableIcon::Loading),
-                        (_, _) => this.icon(ZableIcon::Plug),
+                    .map(|this| match &self.url_status {
+                        UrlStatus::Empty => this.icon(ZableIcon::Plug).disabled(true),
+                        UrlStatus::Valid(conn) => match &conn.test_status {
+                            TestStatus::Idle | TestStatus::Failed(_) => {
+                                this.label("Test").icon(ZableIcon::Plug)
+                            }
+                            TestStatus::Testing => this
+                                .label("Testing")
+                                .disabled(true)
+                                .loading(true)
+                                .loading_icon(ZableIcon::Loading),
+                            TestStatus::Tested(_) => this
+                                .label("Tested")
+                                .icon(ZableIcon::CircleCheck)
+                                .disabled(true),
+                        },
+                        _ => this.icon(ZableIcon::Plug),
                     })
                     .on_click(cx.listener(|this, _, window, cx| {
                         this.handle_test_connection(window, cx);
@@ -226,25 +238,28 @@ impl ConnectionView {
     }
 
     fn handle_test_connection(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        let UrlStatus::Valid(config) = &self.url_status else {
+        let UrlStatus::Valid(config) = &mut self.url_status else {
             return;
         };
-
-        self.test_status = TestStatus::Testing;
+        config.test_status = TestStatus::Testing;
         cx.notify();
 
-        let config = config.clone();
+        let config = config.connection_config.clone();
         let task = Tokio::spawn(cx, async move { check_pg_connection(&config).await });
 
         cx.spawn(async |this, cx| {
             let result = task.await;
 
             this.update(cx, |this, cx| {
-                match result {
-                    Ok(Ok(info)) => this.test_status = TestStatus::Tested(info),
-                    Ok(Err(e)) => this.test_status = TestStatus::Failed(e.to_string().into()),
-                    Err(e) => this.test_status = TestStatus::Failed(e.to_string().into()),
-                }
+                let UrlStatus::Valid(valid) = &mut this.url_status else {
+                    return;
+                };
+
+                valid.test_status = match result {
+                    Ok(Ok(info)) => TestStatus::Tested(info),
+                    Ok(Err(e)) => TestStatus::Failed(e.to_string().into()),
+                    Err(e) => TestStatus::Failed(e.to_string().into()),
+                };
 
                 cx.notify();
             })
@@ -263,7 +278,7 @@ impl ConnectionView {
 
         match AppConfig::load() {
             Ok(mut app_config) => {
-                app_config.upsert(ConnectionEntry::new(name, label, config));
+                app_config.upsert(ConnectionEntry::new(name, label, &config.connection_config));
                 if let Err(e) = app_config.save() {
                     eprintln!("Failed to save config: {}", e);
                 }
@@ -279,28 +294,34 @@ impl ConnectionView {
 
 impl ConnectionView {
     fn status_hint(&self, theme: &ThemeColor) -> Option<StatusHint> {
-        use {TestStatus::*, UrlStatus::*};
-        let hint = match (&self.url_status, &self.test_status) {
-            (Empty, _) => return None,
-            (Invalid, _) => StatusHint {
+        let hint = match &self.url_status {
+            UrlStatus::Empty => return None,
+            UrlStatus::Invalid => StatusHint {
                 icon: ZableIcon::CircleAlert,
                 color: theme.danger,
                 text: "Please fix the error before saving.".into(),
             },
-            (Valid(_), Tested(info)) => StatusHint {
-                icon: ZableIcon::Check,
-                color: theme.success,
-                text: format!("{} {}ms", info.version, info.elapsed.as_millis()).into(),
-            },
-            (Valid(_), Failed(e)) => StatusHint {
-                icon: ZableIcon::CircleAlert,
-                color: theme.danger,
-                text: e.clone(),
-            },
-            (Valid(_), _) => StatusHint {
-                icon: ZableIcon::CircleCheck,
-                color: theme.success,
-                text: "URL is valid.".into(),
+            UrlStatus::Valid(conn) => match &conn.test_status {
+                TestStatus::Idle => StatusHint {
+                    icon: ZableIcon::CircleCheck,
+                    color: theme.success,
+                    text: "URL is valid.".into(),
+                },
+                TestStatus::Testing => StatusHint {
+                    icon: ZableIcon::CircleCheck,
+                    color: theme.success,
+                    text: "URL is valid.".into(),
+                },
+                TestStatus::Tested(info) => StatusHint {
+                    icon: ZableIcon::Check,
+                    color: theme.success,
+                    text: format!("{} {}ms", info.version, info.elapsed.as_millis()).into(),
+                },
+                TestStatus::Failed(e) => StatusHint {
+                    icon: ZableIcon::CircleAlert,
+                    color: theme.danger,
+                    text: e.clone(),
+                },
             },
         };
         Some(hint)
