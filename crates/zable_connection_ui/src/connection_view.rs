@@ -22,7 +22,7 @@ use zable_core::{
 enum UrlStatus {
     Empty,
     Invalid,
-    Valid(ValidConnection),
+    Valid(Box<ValidConnection>),
 }
 
 #[derive(Debug)]
@@ -68,10 +68,10 @@ impl ConnectionView {
 
                 match ConnectionConfig::parse(&raw) {
                     Ok(config) => {
-                        this.url_status = UrlStatus::Valid(ValidConnection {
+                        this.url_status = UrlStatus::Valid(Box::new(ValidConnection {
                             connection_config: config,
                             test_status: TestStatus::Idle,
-                        })
+                        }));
                     }
                     Err(_) => this.url_status = UrlStatus::Invalid,
                 }
