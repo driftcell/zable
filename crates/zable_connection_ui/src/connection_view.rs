@@ -1,9 +1,9 @@
 use gpui::{
-    AppContext, Context, Entity, IntoElement, ParentElement, Render, SharedString, Styled as _,
-    Window, div, prelude::FluentBuilder, px,
+    AppContext, Context, Entity, Hsla, IntoElement, ParentElement, Render, SharedString,
+    Styled as _, Window, div, prelude::FluentBuilder, px,
 };
 use gpui_component::{
-    ActiveTheme, Disableable, Icon, StyledExt as _, WindowExt,
+    ActiveTheme, Disableable, Icon, StyledExt as _, ThemeColor, WindowExt,
     button::{Button, ButtonVariants as _},
     h_flex,
     input::{Input, InputEvent, InputState},
@@ -21,7 +21,7 @@ use zable_core::{
 #[derive(Debug)]
 enum UrlStatus {
     Empty,
-    Invalid(SharedString),
+    Invalid,
     Valid(ConnectionConfig),
 }
 
@@ -31,6 +31,13 @@ enum TestStatus {
     Testing,
     Tested(PgServerInfo),
     Failed(SharedString),
+}
+
+#[derive(Debug)]
+struct StatusHint {
+    icon: ZableIcon,
+    color: Hsla,
+    text: SharedString,
 }
 
 pub struct ConnectionView {
@@ -58,7 +65,7 @@ impl ConnectionView {
 
                 match ConnectionConfig::parse(&raw) {
                     Ok(config) => this.url_status = UrlStatus::Valid(config),
-                    Err(e) => this.url_status = UrlStatus::Invalid(e.to_string().into()),
+                    Err(_) => this.url_status = UrlStatus::Invalid,
                 }
 
                 cx.notify();
@@ -74,7 +81,9 @@ impl ConnectionView {
             test_status: TestStatus::Idle,
         }
     }
+}
 
+impl ConnectionView {
     fn render_header(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme().colors;
 
@@ -153,61 +162,14 @@ impl ConnectionView {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let base = h_flex().items_center().gap_1p5();
         let theme = cx.theme().colors;
-        match &self.url_status {
-            UrlStatus::Invalid(_reason) => base
-                .child(
-                    Icon::new(ZableIcon::CircleAlert)
-                        .size_3p5()
-                        .text_color(theme.danger),
-                )
-                .child(
-                    div()
-                        .text_xs()
-                        .text_color(theme.danger)
-                        .child("Please fix the error before saving."),
-                ),
-            UrlStatus::Valid(_parsed) => match &self.test_status {
-                TestStatus::Tested(info) => base
-                    .child(
-                        Icon::new(ZableIcon::Check)
-                            .size_3p5()
-                            .text_color(theme.success),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child(format!("{} {}ms", info.version, info.elapsed.as_millis())),
-                    ),
-                TestStatus::Failed(e) => base
-                    .child(
-                        Icon::new(ZableIcon::CircleAlert)
-                            .size_3p5()
-                            .text_color(theme.danger),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child(e.to_string()),
-                    ),
-                _ => base
-                    .child(
-                        Icon::new(ZableIcon::CircleCheck)
-                            .size_3p5()
-                            .text_color(theme.success),
-                    )
-                    .child(
-                        div()
-                            .text_xs()
-                            .text_color(theme.muted_foreground)
-                            .child("URL is valid."),
-                    ),
-            },
-            _ => base,
-        }
+        h_flex()
+            .items_center()
+            .gap_1p5()
+            .when_some(self.status_hint(&theme), |this, hint| {
+                this.child(Icon::new(hint.icon).size_2p5().text_color(hint.color))
+                    .child(div().text_xs().text_color(hint.color).child(hint.text))
+            })
     }
 
     fn render_footer_actions(
@@ -312,6 +274,36 @@ impl ConnectionView {
         }
 
         window.close_dialog(cx);
+    }
+}
+
+impl ConnectionView {
+    fn status_hint(&self, theme: &ThemeColor) -> Option<StatusHint> {
+        use {TestStatus::*, UrlStatus::*};
+        let hint = match (&self.url_status, &self.test_status) {
+            (Empty, _) => return None,
+            (Invalid, _) => StatusHint {
+                icon: ZableIcon::CircleAlert,
+                color: theme.danger,
+                text: "Please fix the error before saving.".into(),
+            },
+            (Valid(_), Tested(info)) => StatusHint {
+                icon: ZableIcon::Check,
+                color: theme.success,
+                text: format!("{} {}ms", info.version, info.elapsed.as_millis()).into(),
+            },
+            (Valid(_), Failed(e)) => StatusHint {
+                icon: ZableIcon::CircleAlert,
+                color: theme.danger,
+                text: e.clone(),
+            },
+            (Valid(_), _) => StatusHint {
+                icon: ZableIcon::CircleCheck,
+                color: theme.success,
+                text: "URL is valid.".into(),
+            },
+        };
+        Some(hint)
     }
 }
 
